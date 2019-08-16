@@ -935,9 +935,13 @@ sub readMAF{ # shared
 	print STDOUT "HotSpot3D::Cluster::readMAF\n";
 	my $fh = new FileHandle;
 	die "Could not open .maf file\n" unless( $fh->open( $this->mafFile() , "r" ) );
-	my $headline = $fh->getline(); chomp( $headline );
-	my $mafi = 0;
-	my %mafcols = map{ ( $_ , $mafi++ ) } split( /\t/ , $headline );
+	my $mafi = 0; my %mafcols;
+	while ( my $ll = $fh->getline ) {
+	   if ( $ll =~ m/^Hugo_Symbol/ ) { chomp( $ll );
+			%mafcols = map {($_, $mafi++)} split( /\t/, $ll );
+			last;
+	   }
+	}
 	unless( defined( $mafcols{"Hugo_Symbol"} )
 			and defined( $mafcols{"Chromosome"} )
 			and defined( $mafcols{"Start_Position"} )
