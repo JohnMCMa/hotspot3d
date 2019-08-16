@@ -459,6 +459,33 @@ sub getDistances{
 			$withinClusterAvgDistance{$clus} = $withinClusterSumDistance->{$clus} / $numPairs;
 #						print "cluster: $cluster, avg distance: $withinClusterAvgDistance{$cluster}, sum distance: $withinClusterSumDistance->{$cluster}\n";#debug
 			delete $mass2pvalues->{$clus};
+#				print STDOUT $hugo."\t".$pdb."\t".$chain."\n";
+			my %below;
+#					print STDOUT "Simulation\tSum_Distances\tAvg_Distance\n";
+			for ( my $simulation = 0; $simulation < $NSIMS ; $simulation++ ) {
+				my $sumDists = 0;
+				for ( my $i = 0; $i < $numPairs ; $i++ ) {
+					my $randIndex = int( rand( $numDistances ) );
+					$sumDists += $distances[$randIndex];
+				} #foreach random pick
+				my $avgDist = $sumDists / $numPairs;
+#						print STDOUT $simulation."\t".$sumDists."\t".$avgDist."\n";
+				if ( $avgDist < $withinClusterAvgDistance{$clus} ) {
+					$below{$clus}++;
+					}
+			} #foreach simulation
+			my $permutationTestPValue;
+			if(exists $below{$clus}){
+				$permutationTestPValue = $below{$clus} / $NSIMS;
+
+		#	print " below: $below{$cluster}\t";#debug
+		#	print STDOUT "Estimated p-value: ".$permutationTestPValue."\n";
+			} else{
+				$permutationTestPValue=0;
+				print "why zero\n";#debug
+			}
+
+			$OUT->print( join( "\t" , ( $clus , $genes , $best_pdb ,$numResidues,$mass , $numPairs , $withinClusterAvgDistance{$clus} , $permutationTestPValue ) )."\n" );
 		} elsif ( $mass == 2 ) {
 #print STDOUT "Cluster ".$cluster." has ".$mass." residues, so its p-value is ".$mass2pvalues->{$cluster}."\n"; #debug
 			$OUT->print( join( "\t" , ( $clus , $genes , $best_pdb , $numResidues, $mass , $numPairs , $withinClusterSumDistance->{$clus} , $mass2pvalues->{$clus} ) )."\n" );
@@ -466,34 +493,6 @@ sub getDistances{
 #						print STDOUT "Cluster ".$cluster." has ".$mass." residue, so it has no p-value\n";#debug
 			$OUT->print( join( "\t" , ( $clus , $genes , $best_pdb , $numResidues, $mass , $numPairs , 0 , "NA" ) )."\n" );
 		} #if mass block
-
-#				print STDOUT $hugo."\t".$pdb."\t".$chain."\n";
-		my %below;
-#					print STDOUT "Simulation\tSum_Distances\tAvg_Distance\n";
-		for ( my $simulation = 0; $simulation < $NSIMS ; $simulation++ ) {
-			my $sumDists = 0;
-			for ( my $i = 0; $i < $numPairs ; $i++ ) {
-				my $randIndex = int( rand( $numDistances ) );
-				$sumDists += $distances[$randIndex];
-			} #foreach random pick
-			my $avgDist = $sumDists / $numPairs;
-#						print STDOUT $simulation."\t".$sumDists."\t".$avgDist."\n";
-			if ( $avgDist < $withinClusterAvgDistance{$clus} ) {
-				$below{$clus}++;
-				}
-		} #foreach simulation
-		my $permutationTestPValue;
-		if(exists $below{$clus}){
-			$permutationTestPValue = $below{$clus} / $NSIMS;
-
-		#	print " below: $below{$cluster}\t";#debug
-		#	print STDOUT "Estimated p-value: ".$permutationTestPValue."\n";
-		} else{
-			$permutationTestPValue=0;
-			print "why zero\n";#debug
-		}
-
-		$OUT->print( join( "\t" , ( $clus , $genes , $best_pdb ,$numResidues,$mass , $numPairs , $withinClusterAvgDistance{$clus} , $permutationTestPValue ) )."\n" );
 	
 	}#foreach cluster
 		$OUT->close();
